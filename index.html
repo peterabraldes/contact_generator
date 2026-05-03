@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NP Scanner">
+<meta name="theme-color" content="#4a2060">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<title>NursePartners Scanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+:root{--purple:#4a2060;--purple-mid:#6b3d8a;--purple-light:#9b6db5;--purple-pale:#f3eef8;--gold:#c8a84b;--gold-light:#f7f0de;--cream:#fdf8f0;--beige:#ede8dc;--sand:#d4c9b0;--text:#1a1118;--text-soft:#6b5f78;--success:#2a7a4a;--error:#c0392b;--nav-h:72px;--header-h:64px;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+.app-header{position:fixed;top:0;left:0;right:0;height:calc(var(--header-h) + var(--safe-top));padding-top:var(--safe-top);background:var(--purple);display:flex;align-items:center;justify-content:space-between;padding-left:18px;padding-right:18px;z-index:100;box-shadow:0 2px 20px rgba(74,32,96,.4)}
+.header-logo{display:flex;align-items:center;gap:10px}
+.header-avatar{width:38px;height:38px;background:var(--beige);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.header-brand{display:flex;flex-direction:column;line-height:1}
+.header-name{font-family:'DM Serif Display',serif;font-size:17px;color:#fff}
+.header-sub{font-size:10px;color:var(--sand);text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
+.header-timer{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 12px}
+.timer-dot{width:7px;height:7px;background:#5ddf8a;border-radius:50%;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.timer-val{font-family:'DM Serif Display',serif;font-size:14px;color:#fff;letter-spacing:.04em}
+.pages{position:fixed;top:calc(var(--header-h) + var(--safe-top));left:0;right:0;bottom:calc(var(--nav-h) + var(--safe-bottom));overflow:hidden;background:var(--cream)}
+.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:16px 16px 24px;display:none;background:var(--cream)}
+.page.active{display:block;animation:pageIn .25s cubic-bezier(.4,0,.2,1) both}
+@keyframes pageIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-bottom));padding-bottom:var(--safe-bottom);background:#fff;border-top:1.5px solid var(--beige);display:flex;box-shadow:0 -4px 20px rgba(74,32,96,.1);z-index:100}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;cursor:pointer;padding:8px 4px;position:relative;-webkit-tap-highlight-color:transparent;transition:background .15s}
+.nav-btn:active{background:var(--purple-pale)}
+.nav-icon{font-size:23px;transition:transform .2s}
+.nav-btn.active .nav-icon{transform:scale(1.18)}
+.nav-label{font-size:10px;font-weight:600;color:var(--text-soft);text-transform:uppercase;letter-spacing:.06em;transition:color .2s}
+.nav-btn.active .nav-label{color:var(--purple)}
+.nav-badge{position:absolute;top:6px;right:calc(50% - 22px);background:var(--gold);color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;border:2px solid #fff}
+.nav-badge.show{display:flex}
+.section-title{font-family:'DM Serif Display',serif;font-size:24px;color:var(--purple);margin-bottom:4px}
+.section-sub{font-size:13px;color:var(--text-soft);margin-bottom:18px;line-height:1.55}
+.card{background:#fff;border-radius:20px;border:1.5px solid var(--beige);overflow:hidden;margin-bottom:14px;box-shadow:0 4px 20px rgba(74,32,96,.08)}
+.card-pad{padding:16px}
+.camera-zone{width:100%;aspect-ratio:4/3;background:#1a1020;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer;min-height:210px}
+.camera-zone video,.camera-zone img.preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.scan-frame{position:absolute;inset:16px;pointer-events:none;z-index:3}
+.scan-frame::before,.scan-frame::after,.scan-frame span::before,.scan-frame span::after{content:'';position:absolute;width:28px;height:28px;border-color:var(--gold);border-style:solid}
+.scan-frame::before{top:0;left:0;border-width:3px 0 0 3px;border-radius:5px 0 0 0}
+.scan-frame::after{top:0;right:0;border-width:3px 3px 0 0;border-radius:0 5px 0 0}
+.scan-frame span::before{bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 5px}
+.scan-frame span::after{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 5px 0}
+@keyframes scanline{0%{top:10%;opacity:1}90%{top:85%;opacity:1}100%{top:85%;opacity:0}}
+.scan-line{position:absolute;left:16px;right:16px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);z-index:2;pointer-events:none;animation:scanline 2.5s ease-in-out infinite;display:none}
+.camera-zone.scanning .scan-line{display:block}
+.cam-placeholder{text-align:center;z-index:1}
+.cam-placeholder .cam-big{font-size:52px;display:block;margin-bottom:10px}
+.cam-placeholder p{font-size:13px;color:rgba(255,255,255,.6)}
+.cam-placeholder strong{color:var(--gold)}
+.cam-actions{display:flex;gap:10px;padding:14px;flex-wrap:wrap}
+.btn{flex:1;min-width:0;padding:14px 8px;border-radius:14px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform .15s,opacity .15s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(.95);opacity:.85}
+.btn .bi{font-size:22px}
+.btn-purple{background:var(--purple);color:#fff;box-shadow:0 4px 14px rgba(74,32,96,.28)}
+.btn-beige{background:var(--beige);color:var(--purple);border:1.5px solid var(--sand)}
+.btn-gold{background:var(--gold);color:#fff;box-shadow:0 4px 14px rgba(200,168,75,.28)}
+.btn-red{background:#fdf0f0;color:var(--error);border:1.5px solid #f5c5c5}
+.btn-green{background:var(--success);color:#fff;box-shadow:0 4px 14px rgba(42,122,74,.22)}
+.btn-wide{width:100%;padding:17px 16px;flex-direction:row;justify-content:center;border-radius:16px}
+.ibtn{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;transition:transform .15s;-webkit-tap-highlight-color:transparent}
+.ibtn:active{transform:scale(.95)}
+.ibtn-purple{background:var(--purple);color:#fff;box-shadow:0 3px 10px rgba(74,32,96,.22)}
+.ibtn-beige{background:var(--beige);color:var(--purple);border:1.5px solid var(--sand)}
+.ibtn-red{background:#fdf0f0;color:var(--error);border:1.5px solid #f5c5c5}
+.ibtn:disabled{opacity:.4;pointer-events:none}
+.ai-bar{display:none;align-items:center;gap:10px;background:var(--purple);color:#fff;padding:12px 16px;border-radius:12px;font-size:13px;font-weight:500;margin-bottom:14px}
+.ai-bar.show{display:flex}
+.ai-spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.audio-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.audio-title{font-weight:600;font-size:14px;color:var(--purple);display:flex;align-items:center;gap:7px}
+.audio-time{font-family:'DM Serif Display',serif;font-size:22px;color:var(--purple)}
+.waveform{height:44px;background:var(--cream);border-radius:10px;display:flex;align-items:center;gap:2px;padding:0 10px;margin-bottom:12px;overflow:hidden}
+.wbar{flex:1;border-radius:2px;background:var(--purple-light);min-height:3px;transition:height .08s}
+.audio-btns{display:flex;gap:8px;flex-wrap:wrap}
+.rec-dot{width:9px;height:9px;background:var(--error);border-radius:50%;animation:blink 1s infinite;display:none}
+.rec-dot.show{display:inline-block}
+.form-card{background:#fff;border-radius:20px;border:1.5px solid var(--beige);padding:18px;margin-bottom:14px;box-shadow:0 4px 18px rgba(74,32,96,.07)}
+.form-section-title{font-family:'DM Serif Display',serif;font-size:16px;color:var(--purple);margin-bottom:14px}
+.field-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.field-1{margin-bottom:12px}
+.fg{display:flex;flex-direction:column;gap:5px}
+label{font-size:10px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.08em}
+input,textarea{padding:13px;border:1.5px solid var(--beige);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);background:var(--cream);outline:none;width:100%;-webkit-appearance:none;transition:border-color .2s,box-shadow .2s}
+input:focus,textarea:focus{border-color:var(--purple-light);box-shadow:0 0 0 3px rgba(155,109,181,.14);background:#fff}
+textarea{resize:none;min-height:80px}
+.access-wrap{background:var(--gold-light);border:1.5px solid #e8d48a;border-radius:12px;padding:13px;margin-bottom:12px}
+.access-lbl{font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.access-val{font-size:15px;font-weight:600;color:var(--purple)}
+.form-actions{display:flex;gap:10px;padding-top:14px;border-top:1.5px solid var(--beige)}
+.contacts-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.pill{background:var(--purple);color:#fff;font-size:12px;font-weight:700;border-radius:20px;padding:3px 12px}
+.contact-row{background:#fff;border-radius:16px;border:1.5px solid var(--beige);padding:13px 14px;margin-bottom:10px;box-shadow:0 2px 10px rgba(74,32,96,.07);display:flex;align-items:center;gap:13px;cursor:pointer}
+.contact-row:active{background:var(--purple-pale)}
+.c-avatar{width:46px;height:46px;background:var(--purple-pale);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:18px;color:var(--purple);flex-shrink:0}
+.c-info{flex:1;min-width:0}
+.c-name{font-weight:600;font-size:15px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c-sub{font-size:12px;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.c-badge{font-size:10px;font-weight:600;color:var(--purple-mid);background:var(--purple-pale);border-radius:6px;padding:2px 7px;margin-top:4px;display:inline-block}
+.c-del{width:34px;height:34px;background:#fdf0f0;border:1.5px solid #f5c5c5;border-radius:8px;color:var(--error);font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.c-del:active{background:#f5c5c5}
+.empty{text-align:center;padding:56px 24px;color:var(--text-soft)}
+.empty .ei{font-size:52px;margin-bottom:12px}
+.empty p{font-size:14px;line-height:1.7}
+.export-stat{display:flex;align-items:center;gap:12px;background:var(--purple-pale);border-radius:12px;padding:14px 16px;margin-bottom:16px}
+.export-num{font-family:'DM Serif Display',serif;font-size:36px;color:var(--purple)}
+.export-lbl{font-size:13px;color:var(--text-soft)}
+.email-chip{background:var(--cream);border:1.5px solid var(--beige);border-radius:10px;padding:11px 14px;margin-bottom:14px;font-size:13px;color:var(--text-soft)}
+.email-chip strong{color:var(--purple);display:block;margin-bottom:2px}
+.divider{height:1px;background:var(--beige);margin:14px 0}
+#toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-bottom) + 10px);left:14px;right:14px;background:var(--purple);color:#fff;padding:14px 18px;border-radius:14px;font-size:14px;font-weight:500;box-shadow:0 8px 28px rgba(74,32,96,.3);z-index:400;display:flex;align-items:center;gap:8px;transform:translateY(20px);opacity:0;pointer-events:none;transition:all .35s cubic-bezier(.34,1.56,.64,1)}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.success{background:var(--success)}
+#toast.error{background:var(--error)}
+.sheet-bg{position:fixed;inset:0;background:rgba(74,32,96,.6);backdrop-filter:blur(6px);z-index:300;display:none;align-items:flex-end;justify-content:center}
+.sheet-bg.show{display:flex;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.sheet{background:#fff;border-radius:24px 24px 0 0;padding:20px 18px calc(20px + var(--safe-bottom));width:100%;max-height:90vh;overflow-y:auto;animation:sheetup .35s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes sheetup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-handle{width:40px;height:4px;background:var(--sand);border-radius:2px;margin:0 auto 18px}
+.sheet-title{font-family:'DM Serif Display',serif;font-size:22px;color:var(--purple);margin-bottom:8px}
+.sheet-desc{font-size:14px;color:var(--text-soft);line-height:1.6;margin-bottom:18px}
+.sheet-actions{display:flex;flex-direction:column;gap:10px}
+.d-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--beige)}
+.d-row:last-child{border-bottom:none}
+.d-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.d-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-soft);margin-bottom:2px}
+.d-val{font-size:15px;color:var(--text);word-break:break-word}
+.d-val a{color:var(--purple);text-decoration:none;font-weight:500}
+/* Setup modal special */
+#setupModal{z-index:500}
+.key-hint{font-size:11px;color:var(--text-soft);margin-top:6px;line-height:1.5}
+.key-hint a{color:var(--purple);font-weight:600}
+#apiKeyError{display:none;color:var(--error);font-size:12px;margin-top:6px}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-logo">
+    <div class="header-avatar">
+      <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" width="22" height="22">
+        <circle cx="20" cy="13" r="7" fill="#4a2060"/>
+        <path d="M8 36c0-6.627 5.373-12 12-12s12 5.373 12 12" fill="#4a2060"/>
+        <circle cx="20" cy="8" r="2.5" fill="white"/>
+        <rect x="18.5" y="6" width="3" height="5" rx="1" fill="white"/>
+        <rect x="16" y="10" width="8" height="3" rx="1" fill="white"/>
+      </svg>
+    </div>
+    <div class="header-brand">
+      <span class="header-name">NursePartners</span>
+      <span class="header-sub">Card Scanner</span>
+    </div>
+  </div>
+  <div class="header-timer">
+    <div class="timer-dot"></div>
+    <span class="timer-val" id="timerVal">4:00:00</span>
+  </div>
+</header>
+
+<div class="pages">
+
+  <!-- SCAN PAGE -->
+  <div class="page active" id="page-scan">
+    <p class="section-title">Scan Card</p>
+    <p class="section-sub">Photograph a business card and let AI fill in all the contact fields automatically.</p>
+    <div class="ai-bar" id="aiBar1"><div class="ai-spin"></div><span id="aiMsg1">Analyzing card with AI...</span></div>
+    <div class="card">
+      <div class="camera-zone" id="cameraZone" onclick="zoneClick()">
+        <div class="scan-frame"><span></span></div>
+        <div class="scan-line"></div>
+        <div class="cam-placeholder" id="camPlaceholder">
+          <span class="cam-big">📇</span>
+          <p><strong>Tap to open camera</strong><br>or use the buttons below</p>
+        </div>
+        <video id="camVideo" autoplay playsinline style="display:none"></video>
+        <img id="cardImg" class="preview" style="display:none" alt="Card preview">
+      </div>
+      <div class="cam-actions">
+        <button class="btn btn-purple" id="btnCam" onclick="openCam()"><span class="bi">📷</span>Camera</button>
+        <button class="btn btn-beige" onclick="document.getElementById('fileIn').click()"><span class="bi">🖼️</span>Upload</button>
+        <button class="btn btn-purple" id="btnCap" style="display:none" onclick="capturePic()"><span class="bi">⚡</span>Capture</button>
+        <button class="btn btn-red" id="btnClearCam" style="display:none" onclick="clearCam()"><span class="bi">✕</span>Clear</button>
+        <input type="file" id="fileIn" accept="image/*" capture="environment" style="display:none" onchange="onFile(event)">
+      </div>
+    </div>
+    <div class="card card-pad">
+      <div class="audio-header">
+        <span class="audio-title">🎙️ Voice Note <span class="rec-dot" id="recDot"></span></span>
+        <span class="audio-time" id="audioTime">0:00</span>
+      </div>
+      <div class="waveform" id="waveform"></div>
+      <div class="audio-btns">
+        <button class="ibtn ibtn-purple" id="btnRec" onclick="toggleRec()">🎙️ Record</button>
+        <button class="ibtn ibtn-beige" id="btnPlay" style="display:none" onclick="playBack()">▶ Play</button>
+        <button class="ibtn ibtn-red" id="btnClearAudio" style="display:none" onclick="clearAudio()">✕ Clear</button>
+      </div>
+    </div>
+    <button class="btn btn-wide btn-gold" onclick="goTo('form')" style="margin-top:4px">
+      <span style="font-size:18px;margin-right:8px">📝</span> Review and Save Contact
+    </button>
+  </div>
+
+  <!-- FORM PAGE -->
+  <div class="page" id="page-form">
+    <p class="section-title">Contact Details</p>
+    <p class="section-sub">Auto-filled from the card scan — review and edit before saving.</p>
+    <div class="ai-bar" id="aiBar2"><div class="ai-spin"></div><span>AI is filling in the fields...</span></div>
+    <div class="form-card">
+      <div class="form-section-title">👤 Name and Role</div>
+      <div class="field-2">
+        <div class="fg"><label>First Name</label><input type="text" id="f_first" placeholder="Jane" autocomplete="given-name"></div>
+        <div class="fg"><label>Last Name</label><input type="text" id="f_last" placeholder="Smith" autocomplete="family-name"></div>
+      </div>
+      <div class="field-2">
+        <div class="fg"><label>Title</label><input type="text" id="f_title" placeholder="Director"></div>
+        <div class="fg"><label>Role</label><input type="text" id="f_role" placeholder="Clinical Lead"></div>
+      </div>
+    </div>
+    <div class="form-card">
+      <div class="form-section-title">📬 Contact Details</div>
+      <div class="field-1 fg"><label>Email</label><input type="email" id="f_email" placeholder="jane@example.com"></div>
+      <div class="field-2">
+        <div class="fg"><label>Mobile Phone</label><input type="tel" id="f_phone" placeholder="(555) 123-4567"></div>
+        <div class="fg"><label>Office Phone</label><input type="tel" id="f_office" placeholder="(555) 987-6543"></div>
+      </div>
+      <div class="field-1 fg"><label>LinkedIn URL</label><input type="url" id="f_linkedin" placeholder="linkedin.com/in/jane"></div>
+      <div class="field-2">
+        <div class="fg"><label>Location</label><input type="text" id="f_loc" placeholder="Philadelphia, PA"></div>
+        <div class="fg"><label>Website</label><input type="url" id="f_web" placeholder="example.com"></div>
+      </div>
+    </div>
+    <div class="access-wrap">
+      <div class="access-lbl">🔒 Access Group (Auto-assigned)</div>
+      <div class="access-val">Limited Client User</div>
+    </div>
+    <div class="form-card">
+      <div class="form-section-title">🎙️ Voice Note Summary</div>
+      <div class="fg"><textarea id="f_audio" placeholder="Type a note about this contact, or edit the auto-filled summary..."></textarea></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-wide btn-green" style="flex:2" onclick="saveContact()"><span style="font-size:18px;margin-right:6px">✅</span>Save Contact</button>
+      <button class="btn btn-wide btn-beige" style="flex:1" onclick="clearForm()"><span style="font-size:18px;margin-right:6px">🔄</span>Clear</button>
+    </div>
+    <div style="height:16px"></div>
+  </div>
+
+  <!-- CONTACTS PAGE -->
+  <div class="page" id="page-contacts">
+    <div class="contacts-header">
+      <p class="section-title" style="margin:0">Contacts</p>
+      <span class="pill" id="cntPill">0 saved</span>
+    </div>
+    <div id="contactsList">
+      <div class="empty"><div class="ei">📇</div><p>No contacts yet.<br>Go to <strong>Scan</strong> to capture your first card.</p></div>
+    </div>
+  </div>
+
+  <!-- EXPORT PAGE -->
+  <div class="page" id="page-export">
+    <p class="section-title">Export</p>
+    <p class="section-sub">Download your contacts as a CSV or email the full session report.</p>
+    <div class="form-card">
+      <div style="font-size:36px;margin-bottom:10px">📊</div>
+      <div class="form-section-title" style="margin-bottom:8px">Session Summary</div>
+      <div class="export-stat">
+        <div class="export-num" id="expNum">0</div>
+        <div class="export-lbl">contacts captured<br>this session</div>
+      </div>
+      <button class="btn btn-wide btn-beige" style="margin-bottom:10px" onclick="downloadCSV()"><span style="font-size:18px;margin-right:8px">⬇️</span>Download CSV</button>
+      <button class="btn btn-wide btn-gold" onclick="showSendModal()"><span style="font-size:18px;margin-right:8px">📧</span>Email Report and End Session</button>
+    </div>
+    <div class="form-card">
+      <div class="form-section-title" style="font-size:15px;margin-bottom:10px">📮 Report Sent To</div>
+      <div class="email-chip">
+        <strong>peterabraldes@nursepartners.net</strong>
+        All captured contacts as a CSV file
+      </div>
+      <div class="divider"></div>
+      <p style="font-size:12px;color:var(--text-soft);line-height:1.6;margin-bottom:14px">The CSV includes First Name, Last Name, Email, Phone, Title, Role, LinkedIn, Office Phone, Location, Website, Access Group, and Audio Summary for each contact.</p>
+      <div class="divider"></div>
+      <button class="btn btn-wide btn-red" onclick="promptResetKey()" style="margin-top:4px"><span style="font-size:16px;margin-right:8px">🔑</span>Change API Key</button>
+    </div>
+  </div>
+
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-scan" onclick="goTo('scan')"><span class="nav-icon">📷</span><span class="nav-label">Scan</span></button>
+  <button class="nav-btn" id="nav-form" onclick="goTo('form')"><span class="nav-icon">📝</span><span class="nav-label">Details</span></button>
+  <button class="nav-btn" id="nav-contacts" onclick="goTo('contacts')"><span class="nav-icon">👥</span><span class="nav-label">Contacts</span><span class="nav-badge" id="navBadge">0</span></button>
+  <button class="nav-btn" id="nav-export" onclick="goTo('export')"><span class="nav-icon">📤</span><span class="nav-label">Export</span></button>
+</nav>
+
+<div id="toast"></div>
+
+<!-- EMAIL SEND MODAL -->
+<div class="sheet-bg" id="sendModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">📧 Send Report</div>
+    <div class="sheet-desc">This will email a CSV of all <strong id="modalCnt">0</strong> contacts to <strong>peterabraldes@nursepartners.net</strong> and end the session.</div>
+    <div class="fg" style="margin-bottom:16px">
+      <label>Optional note</label>
+      <textarea id="emailNote" placeholder="Add any context about this scanning session..." style="min-height:70px"></textarea>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-wide btn-gold" onclick="doSend()"><span style="font-size:18px;margin-right:8px">📤</span>Send Now</button>
+      <button class="btn btn-wide btn-beige" onclick="closeModal('sendModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTACT DETAIL MODAL -->
+<div class="sheet-bg" id="detailModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div id="detailContent"></div>
+    <div class="sheet-actions" style="margin-top:16px">
+      <button class="btn btn-wide btn-red" id="delBtn"><span style="font-size:18px;margin-right:8px">🗑️</span>Remove Contact</button>
+      <button class="btn btn-wide btn-beige" onclick="closeModal('detailModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- API KEY SETUP MODAL -->
+<div class="sheet-bg show" id="setupModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div style="font-size:36px;margin-bottom:10px">🔑</div>
+    <div class="sheet-title">One-Time Setup</div>
+    <div class="sheet-desc">
+      To auto-extract contact details from photos, the app needs your Anthropic API key.
+      It is saved <strong>only on this device</strong> and never sent anywhere except directly to Anthropic.
+    </div>
+    <div class="fg" style="margin-bottom:4px">
+      <label>Anthropic API Key</label>
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" style="font-family:monospace;font-size:13px" oninput="document.getElementById('apiKeyError').style.display='none'">
+    </div>
+    <p id="apiKeyError">Key should start with sk-ant- — please check and try again.</p>
+    <p class="key-hint">
+      Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+      under API Keys. You only need to do this once per device.
+    </p>
+    <div class="sheet-actions" style="margin-top:18px">
+      <button class="btn btn-wide btn-purple" onclick="saveApiKey()"><span style="font-size:18px;margin-right:8px">✅</span>Save and Continue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── SERVICE WORKER ── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+
+/* ── PWA INSTALL ── */
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+});
+
+/* ── API KEY ── */
+let API_KEY = localStorage.getItem('np_api_key') || '';
+
+window.addEventListener('load', () => {
+  if (!API_KEY) {
+    document.getElementById('setupModal').classList.add('show');
+  }
+});
+
+function saveApiKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (!val.startsWith('sk-ant-')) {
+    document.getElementById('apiKeyError').style.display = 'block';
+    return;
+  }
+  API_KEY = val;
+  localStorage.setItem('np_api_key', val);
+  document.getElementById('setupModal').classList.remove('show');
+  showToast('API key saved — ready to scan!', 'success');
+}
+
+function promptResetKey() {
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('apiKeyError').style.display = 'none';
+  document.getElementById('setupModal').classList.add('show');
+}
+
+/* ── STATE ── */
+let contacts    = [];
+let camStream   = null;
+let isCamOpen   = false;
+let mediaRec    = null;
+let audioChunks = [];
+let audioBlob   = null;
+let audioURL    = null;
+let isRec       = false;
+let recSecs     = 0;
+let recTimer    = null;
+let waveTimer   = null;
+let sessionSecs = 4 * 60 * 60;
+let sessTimer   = null;
+let cardDataURL = null;
+
+/* ── NAV ── */
+function goTo(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'contacts') renderContacts();
+  if (name === 'export') document.getElementById('expNum').textContent = contacts.length;
+}
+
+/* ── SESSION TIMER ── */
+function fmt(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), ss = s%60;
+  return h + ':' + String(m).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
+}
+
+sessTimer = setInterval(() => {
+  sessionSecs--;
+  document.getElementById('timerVal').textContent = fmt(sessionSecs);
+  if (sessionSecs <= 0) { clearInterval(sessTimer); autoSend(); }
+}, 1000);
+
+function autoSend() {
+  showToast('Session expired — sending report...');
+  setTimeout(() => doSend(true), 1500);
+}
+
+/* ── WAVEFORM ── */
+(function(){
+  const wf = document.getElementById('waveform');
+  for (let i = 0; i < 36; i++) {
+    const b = document.createElement('div');
+    b.className = 'wbar'; b.style.height = '3px';
+    wf.appendChild(b);
+  }
+})();
+
+function startWave() {
+  waveTimer = setInterval(() => {
+    document.querySelectorAll('.wbar').forEach(b => {
+      b.style.height = (3 + Math.random() * 34) + 'px';
+      b.style.background = isRec ? '#c0392b' : 'var(--purple-light)';
+    });
+  }, 80);
+}
+
+function stopWave() {
+  clearInterval(waveTimer);
+  document.querySelectorAll('.wbar').forEach(b => { b.style.height = '3px'; b.style.background = 'var(--purple-light)'; });
+}
+
+/* ── AUDIO ── */
+async function toggleRec() { if (isRec) stopRec(); else await startRec(); }
+
+async function startRec() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRec = new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRec.ondataavailable = e => audioChunks.push(e.data);
+    mediaRec.onstop = () => {
+      audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      audioURL = URL.createObjectURL(audioBlob);
+      document.getElementById('btnPlay').style.display = 'inline-flex';
+      document.getElementById('btnClearAudio').style.display = 'inline-flex';
+      stream.getTracks().forEach(t => t.stop());
+      document.getElementById('f_audio').value = 'Voice note recorded (' + recSecs + 's) — add your summary here.';
+    };
+    mediaRec.start();
+    isRec = true; recSecs = 0;
+    document.getElementById('btnRec').innerHTML = 'Stop';
+    document.getElementById('btnRec').className = 'ibtn ibtn-red';
+    document.getElementById('recDot').classList.add('show');
+    startWave();
+    recTimer = setInterval(() => {
+      recSecs++;
+      const m = Math.floor(recSecs/60), s = recSecs % 60;
+      document.getElementById('audioTime').textContent = m + ':' + String(s).padStart(2,'0');
+    }, 1000);
+  } catch(e) {
+    showToast('Allow microphone access to record.', 'error');
+  }
+}
+
+function stopRec() {
+  mediaRec && mediaRec.stop();
+  isRec = false; clearInterval(recTimer); stopWave();
+  document.getElementById('btnRec').innerHTML = 'Record';
+  document.getElementById('btnRec').className = 'ibtn ibtn-purple';
+  document.getElementById('recDot').classList.remove('show');
+}
+
+function playBack() { if (audioURL) new Audio(audioURL).play(); }
+
+function clearAudio() {
+  audioBlob = audioURL = null;
+  document.getElementById('btnPlay').style.display = 'none';
+  document.getElementById('btnClearAudio').style.display = 'none';
+  document.getElementById('audioTime').textContent = '0:00';
+  document.getElementById('f_audio').value = '';
+  stopWave();
+}
+
+/* ── CAMERA ── */
+function zoneClick() {
+  if (!isCamOpen && !cardDataURL) document.getElementById('fileIn').click();
+}
+
+async function openCam() {
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const v = document.getElementById('camVideo');
+    v.srcObject = camStream; v.style.display = 'block';
+    document.getElementById('camPlaceholder').style.display = 'none';
+    document.getElementById('cardImg').style.display = 'none';
+    document.getElementById('btnCap').style.display = 'flex';
+    document.getElementById('btnCam').style.display = 'none';
+    document.getElementById('cameraZone').classList.add('scanning');
+    isCamOpen = true;
+  } catch(e) {
+    document.getElementById('fileIn').click();
+  }
+}
+
+function capturePic() {
+  const v = document.getElementById('camVideo');
+  const c = document.createElement('canvas');
+  c.width = v.videoWidth; c.height = v.videoHeight;
+  c.getContext('2d').drawImage(v, 0, 0);
+  stopCamStream();
+  showPreview(c.toDataURL('image/jpeg', 0.9));
+}
+
+function stopCamStream() {
+  if (camStream) camStream.getTracks().forEach(t => t.stop());
+  camStream = null;
+  const v = document.getElementById('camVideo');
+  v.style.display = 'none'; v.srcObject = null;
+  document.getElementById('btnCap').style.display = 'none';
+  document.getElementById('btnCam').style.display = 'flex';
+  document.getElementById('cameraZone').classList.remove('scanning');
+  isCamOpen = false;
+}
+
+function onFile(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => showPreview(ev.target.result);
+  r.readAsDataURL(f);
+}
+
+function showPreview(dataURL) {
+  cardDataURL = dataURL;
+  const img = document.getElementById('cardImg');
+  img.src = dataURL; img.style.display = 'block';
+  document.getElementById('camPlaceholder').style.display = 'none';
+  document.getElementById('btnClearCam').style.display = 'flex';
+  document.getElementById('cameraZone').classList.add('scanning');
+  extractCard(dataURL);
+}
+
+function clearCam() {
+  cardDataURL = null;
+  document.getElementById('cardImg').src = '';
+  document.getElementById('cardImg').style.display = 'none';
+  document.getElementById('camPlaceholder').style.display = 'flex';
+  document.getElementById('btnClearCam').style.display = 'none';
+  document.getElementById('cameraZone').classList.remove('scanning');
+  document.getElementById('fileIn').value = '';
+  hideAI();
+}
+
+/* ── AI EXTRACTION ── */
+async function extractCard(dataURL) {
+  if (!API_KEY) {
+    document.getElementById('setupModal').classList.add('show');
+    return;
+  }
+  showAI('Analyzing card with AI...');
+  try {
+    const base64 = dataURL.split(',')[1];
+    const mt = (dataURL.match(/data:([^;]+);/) || [])[1] || 'image/jpeg';
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mt, data: base64 } },
+            { type: 'text', text: 'Extract contact information from this business card image. Return ONLY a JSON object with exactly these keys (empty string "" if not found):\n{"firstName":"","lastName":"","email":"","phone":"","title":"","role":"","linkedin":"","officePhone":"","location":"","website":""}\nReturn ONLY the JSON. No explanation, no markdown.' }
+          ]
+        }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        API_KEY = '';
+        localStorage.removeItem('np_api_key');
+        document.getElementById('setupModal').classList.add('show');
+        hideAI();
+        showToast('API key invalid — please re-enter it.', 'error');
+        return;
+      }
+      throw new Error('API error ' + res.status + ': ' + JSON.stringify(err));
+    }
+
+    const data = await res.json();
+    const raw = (data.content || []).map(b => b.text || '').join('').replace(/```json|```/g, '').trim();
+    const p = JSON.parse(raw);
+
+    const map = { firstName:'f_first', lastName:'f_last', email:'f_email', phone:'f_phone',
+                  title:'f_title', role:'f_role', linkedin:'f_linkedin',
+                  officePhone:'f_office', location:'f_loc', website:'f_web' };
+    let filled = 0;
+    for (const [k, id] of Object.entries(map)) {
+      if (p[k]) { document.getElementById(id).value = p[k]; filled++; }
+    }
+
+    hideAI();
+    showToast('Extracted ' + filled + ' fields! Tap Details to review.', 'success');
+    setTimeout(() => goTo('form'), 900);
+
+  } catch(err) {
+    hideAI();
+    console.error('Extraction error:', err);
+    showToast('AI extraction failed: ' + err.message.slice(0, 60), 'error');
+  }
+}
+
+function showAI(msg) {
+  document.getElementById('aiMsg1').textContent = msg;
+  document.getElementById('aiBar1').classList.add('show');
+  document.getElementById('aiBar2').classList.add('show');
+}
+
+function hideAI() {
+  document.getElementById('aiBar1').classList.remove('show');
+  document.getElementById('aiBar2').classList.remove('show');
+}
+
+/* ── SAVE CONTACT ── */
+function saveContact() {
+  const first = document.getElementById('f_first').value.trim();
+  const last  = document.getElementById('f_last').value.trim();
+  if (!first && !last) { showToast('Please enter at least a name.', 'error'); return; }
+
+  contacts.push({
+    id:           Date.now(),
+    firstName:    first,
+    lastName:     last,
+    email:        document.getElementById('f_email').value.trim(),
+    phone:        document.getElementById('f_phone').value.trim(),
+    title:        document.getElementById('f_title').value.trim(),
+    role:         document.getElementById('f_role').value.trim(),
+    linkedin:     document.getElementById('f_linkedin').value.trim(),
+    officePhone:  document.getElementById('f_office').value.trim(),
+    location:     document.getElementById('f_loc').value.trim(),
+    website:      document.getElementById('f_web').value.trim(),
+    accessGroup:  'Limited Client User',
+    audioSummary: document.getElementById('f_audio').value.trim(),
+    timestamp:    new Date().toLocaleString()
+  });
+
+  refreshBadge();
+  clearForm(); clearCam(); clearAudio();
+  showToast((first || last) + ' saved!', 'success');
+  goTo('scan');
+}
+
+function clearForm() {
+  ['f_first','f_last','f_email','f_phone','f_title','f_role','f_linkedin','f_office','f_loc','f_web','f_audio']
+    .forEach(id => document.getElementById(id).value = '');
+}
+
+function refreshBadge() {
+  const n = contacts.length;
+  const b = document.getElementById('navBadge');
+  b.textContent = n;
+  b.classList.toggle('show', n > 0);
+  document.getElementById('cntPill').textContent = n + ' saved';
+  document.getElementById('expNum').textContent = n;
+  document.getElementById('modalCnt').textContent = n;
+}
+
+/* ── CONTACTS LIST ── */
+function renderContacts() {
+  const el = document.getElementById('contactsList');
+  if (!contacts.length) {
+    el.innerHTML = '<div class="empty"><div class="ei">📇</div><p>No contacts yet.<br>Go to <strong>Scan</strong> to capture your first card.</p></div>';
+    return;
+  }
+  el.innerHTML = contacts.map(c => {
+    const init = ((c.firstName[0]||'') + (c.lastName[0]||'')).toUpperCase() || '?';
+    return '<div class="contact-row" onclick="showDetail(' + c.id + ')">' +
+      '<div class="c-avatar">' + init + '</div>' +
+      '<div class="c-info">' +
+        '<div class="c-name">' + esc(c.firstName) + ' ' + esc(c.lastName) + '</div>' +
+        '<div class="c-sub">' + esc(c.title || c.role || c.email || '—') + '</div>' +
+        '<span class="c-badge">Limited Client User</span>' +
+      '</div>' +
+      '<div class="c-del" onclick="event.stopPropagation();delContact(' + c.id + ')">✕</div>' +
+    '</div>';
+  }).join('');
+}
+
+function delContact(id) {
+  contacts = contacts.filter(c => c.id !== id);
+  refreshBadge(); renderContacts();
+  showToast('Contact removed.');
+}
+
+/* ── DETAIL SHEET ── */
+function showDetail(id) {
+  const c = contacts.find(x => x.id === id); if (!c) return;
+  const row = (icon, label, val, href) => val ?
+    '<div class="d-row"><div class="d-icon">' + icon + '</div><div><div class="d-lbl">' + label + '</div>' +
+    '<div class="d-val">' + (href ? '<a href="' + href + '">' + esc(val) + '</a>' : esc(val)) + '</div></div></div>' : '';
+
+  document.getElementById('detailContent').innerHTML =
+    '<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">' +
+      '<div class="c-avatar" style="width:54px;height:54px;font-size:22px;flex-shrink:0">' +
+        ((c.firstName[0]||'') + (c.lastName[0]||'')).toUpperCase() +
+      '</div>' +
+      '<div>' +
+        '<div style="font-family:\'DM Serif Display\',serif;font-size:22px;color:var(--purple)">' + esc(c.firstName) + ' ' + esc(c.lastName) + '</div>' +
+        '<span class="c-badge" style="margin-top:4px">Limited Client User</span>' +
+      '</div>' +
+    '</div>' +
+    row('✉️','Email',c.email,'mailto:'+c.email) +
+    row('📱','Mobile',c.phone,'tel:'+c.phone) +
+    row('☎️','Office',c.officePhone,'tel:'+c.officePhone) +
+    row('🏷️','Title',c.title) +
+    row('💼','Role',c.role) +
+    row('📍','Location',c.location) +
+    row('🔗','LinkedIn',c.linkedin,c.linkedin) +
+    row('🌐','Website',c.website,c.website) +
+    row('🎙️','Voice Note',c.audioSummary);
+
+  document.getElementById('delBtn').onclick = () => { delContact(id); closeModal('detailModal'); };
+  document.getElementById('detailModal').classList.add('show');
+}
+
+/* ── CSV ── */
+function buildCSV() {
+  const h = ['First Name','Last Name','Email','Phone','Title','Role','LinkedIn Profile','Office Phone','Location','Website','Access Group','Audio Summary','Timestamp'];
+  const rows = contacts.map(c =>
+    [c.firstName,c.lastName,c.email,c.phone,c.title,c.role,c.linkedin,c.officePhone,c.location,c.website,c.accessGroup,c.audioSummary,c.timestamp]
+    .map(v => '"' + (v||'').replace(/"/g,'""') + '"').join(',')
+  );
+  return [h.join(','), ...rows].join('\n');
+}
+
+function downloadCSV() {
+  if (!contacts.length) { showToast('No contacts yet.', 'error'); return; }
+  const blob = new Blob([buildCSV()], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'nursepartners_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  showToast('CSV downloaded!', 'success');
+}
+
+/* ── EMAIL ── */
+function showSendModal() {
+  if (!contacts.length) { showToast('No contacts to send yet.', 'error'); return; }
+  document.getElementById('modalCnt').textContent = contacts.length;
+  document.getElementById('sendModal').classList.add('show');
+}
+
+function doSend(auto) {
+  const notes = (document.getElementById('emailNote') || {}).value || '';
+  const n = contacts.length;
+  closeModal('sendModal');
+  const subject = encodeURIComponent('NursePartners Contact Scan — ' + n + ' contacts — ' + new Date().toLocaleDateString());
+  const body = encodeURIComponent(
+    'NursePartners Contact Scanner Report\nDate: ' + new Date().toLocaleString() + '\nContacts: ' + n +
+    (notes ? '\nNotes: ' + notes : '') + '\n\n--- CSV DATA ---\n\n' + buildCSV()
+  );
+  window.location.href = 'mailto:peterabraldes@nursepartners.net?subject=' + subject + '&body=' + body;
+  setTimeout(() => { downloadCSV(); showToast('Email opened and CSV downloaded!', 'success'); }, 600);
+  if (auto) { contacts = []; refreshBadge(); renderContacts(); }
+}
+
+/* ── MODALS ── */
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.getElementById('sendModal').addEventListener('click', function(e) { if (e.target===this) closeModal('sendModal'); });
+document.getElementById('detailModal').addEventListener('click', function(e) { if (e.target===this) closeModal('detailModal'); });
+document.getElementById('setupModal').addEventListener('click', function(e) { if (e.target===this && API_KEY) closeModal('setupModal'); });
+
+/* ── TOAST ── */
+let toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.innerHTML = msg; t.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = '', 3200);
+}
+
+function esc(s) {
+  return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
+}
+
+window.addEventListener('offline', () => showToast('Offline — app still works!'));
+window.addEventListener('online',  () => showToast('Back online!', 'success'));
+</script>
+</body>
+</html>
